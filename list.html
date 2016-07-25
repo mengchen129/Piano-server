@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title></title>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            font-size: 14px;
+        }
+
+        header {
+            padding: 10px 0;
+            text-align: center;
+            background-color: dodgerblue;
+            color: #ffffff;
+            font-size: 16px;
+            position: fixed;
+            width: 100%;
+        }
+
+        .search-input {
+            display: block;
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #eeeeee;
+            background-color: #ffffff;
+            padding: 5px;
+            outline: 0;
+        }
+
+        .main {
+            padding: 42px 10px 10px 10px;
+        }
+
+        .music-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .music {
+            padding: 10px 0;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .music-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .music-tune {
+            font-size: 12px;
+            margin-left: 1em;
+        }
+
+        .music-desc {
+            font-size: 12px;
+            padding-top: 5px;
+        }
+
+        .play-count {
+            font-size: 12px;
+            padding-top: 5px;
+        }
+
+        .empty-tip {
+            font-size: 12px;
+            text-align: center;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<header>听一听美妙的音乐</header>
+
+<section class="main" data-bind="template: 'music-template'"></section>
+
+<script id="music-template" type="text/html">
+
+    <input type="text" class="search-input" data-bind="textInput: filter" placeholder="输入关键词查找...">
+
+    <!-- ko if: loadTip() -->
+    <div class="empty-tip text-muted" data-bind="text: loadTip()"></div>
+    <!-- /ko -->
+    <!-- ko if musicList().length -->
+    <ul class="music-list" data-bind="foreach: filterMusicList">
+        <li>
+            <div class="music clearfix">
+                <div class="pull-left">
+                    <div>
+                        <span class="music-name" data-bind="text: music_name"></span>
+                    </div>
+                    <div class="music-desc text-muted">
+                        <span data-bind="text: music_author"></span> 上传于 <span data-bind="text: music_create_time"></span>
+                        <span class="music-tune">
+                            ( 音调: <span data-bind="text: music_tune_name"></span> )
+                        </span>
+                    </div>
+                    <div class="music-desc text-muted">TA的感受: <span data-bind="text: music_feel"></span></div>
+                </div>
+                <div class="pull-right">
+                    <button type="button" class="btn btn-success btn-sm" data-bind="click: $root.play">欣赏</button>
+                    <br/>
+                    <span class="play-count text-muted"><span data-bind="text: music_play_count"></span>次欣赏</span>
+                </div>
+            </div>
+        </li>
+    </ul>
+    <!-- /ko -->
+</script>
+
+<script src="//cdn.bootcss.com/knockout/3.4.0/knockout-min.js"></script>
+<script>
+    window.onload = function() {
+
+        var TUNES_ARR = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        var LOAD_TIP_ARR = ['正在努力加载中...', '这里空空如也, 赶快上传自己的作品吧~', undefined, '没有搜到结果'];
+
+        function ViewModel() {
+            var self = this;
+
+            // 加载进度: 0 - 正在加载  1-成功但没有数据  2-成功  3-检索无数据
+            this.loadStatus = ko.observable(0);
+
+            this.loadTip = ko.pureComputed(function() {
+                return LOAD_TIP_ARR[self.loadStatus()];
+            });
+
+            this.musicList = ko.observableArray();
+
+            this.filter = ko.observable('');
+
+            this.filterMusicList = ko.pureComputed(function() {
+                var filter = self.filter().trim();
+                if (!filter) {
+                    self.loadStatus(2);
+                    return self.musicList();
+                }
+
+                var result = ko.utils.arrayFilter(self.musicList(), function(music) {
+                    return music.music_name.indexOf(filter) != -1;
+                });
+
+                self.loadStatus(result.length ? 2 : 3);
+                return result;
+            });
+
+
+
+            this.loadData = function() {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4) {
+                        var text = xhr.responseText;
+                        var resObj = JSON.parse(text);
+                        if (resObj.code == 0) {
+                            var list = resObj.data;
+                            for (var i = 0; i < list.length; i++) {
+                                var music = list[i];
+                                music.music_create_time = music.music_create_time.substring(0, 10);
+                                music.music_tune_name = TUNES_ARR[music.music_tune];
+                                music.music_author = music.music_author || '匿名音乐爱好者';
+                                self.musicList.push(list[i]);
+                            }
+                            self.loadStatus(list.length ? 2 : 1);
+                        }
+                    }
+                };
+
+                xhr.open('GET', '/music-list', true);
+                xhr.send(null);
+            };
+
+            this.play = function(music) {
+                var tune = music.music_tune;
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4) {
+                        var text = xhr.responseText;
+                        var resObj = JSON.parse(text);
+                        if (resObj.code == 0) {
+                            var list = resObj.data;
+                            var myList = [];
+                            for (var i = 0; i < list.length; i++) {
+                                myList.push({
+                                    time: list[i].record_time,
+                                    tunes: JSON.parse(list[i].record_tunes)
+                                });
+                            }
+                            var recordJson = JSON.stringify(myList);
+//                            console.log(recordJson);
+                            window.external.play(recordJson, '' + tune);
+                        }
+                    }
+                };
+
+                xhr.open('GET', '/music-detail?music_id=' + music.id, true);
+                xhr.send(null);
+            };
+        }
+
+        var vm = new ViewModel();
+        ko.applyBindings(vm);
+        vm.loadData();
+    };
+</script>
+</body>
+</html>

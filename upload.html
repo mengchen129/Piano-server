@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>上传录音</title>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            padding: 10px 0;
+            text-align: center;
+            background-color: dodgerblue;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .main {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<header>上传我的录音</header>
+<section class="main">
+    <form action="/music-upload" method="post">
+        <p>
+        <label for="music-name">这首录音是哪一首歌:</label>
+        <input type="text" id="music-name" name="music_name" class="form-control" placeholder="例如: 莫斯科没有眼泪" required autocomplete="off">
+        </p>
+        <p>
+        <label for="music-feel">这一刻的感受:</label>
+        <input type="text" id="music-feel" name="music_feel" class="form-control" placeholder="例如: 又学会弹奏了一首歌, 给自己点个赞^_^" autocomplete="off">
+        </p>
+        <p>
+            <label for="music-tune">演奏的音调:</label>
+            <select name="music_tune" id="music-tune" class="form-control">
+                <option value="0">C</option>
+                <option value="1">C#</option>
+                <option value="2">D</option>
+                <option value="3">D#</option>
+                <option value="4">E</option>
+                <option value="5">F</option>
+                <option value="6">F#</option>
+                <option value="7">G</option>
+                <option value="8">G#</option>
+                <option value="9">A</option>
+                <option value="10">A#</option>
+                <option value="11">B</option>
+            </select>
+        </p>
+        <p>
+            <label for="music-author">您的芳名:</label>
+            <input type="text" id="music-author" name="music_author" class="form-control" placeholder="留下您的芳名, 不填代表匿名" autocomplete="off">
+        </p>
+        <p class="text-center" style="padding-top: 1em;">
+            <button type="submit" class="btn btn-success btn-lg">点击上传</button>
+        </p>
+
+        <input type="hidden" name="record_data" id="record-data" />
+    </form>
+</section>
+
+<script>
+    function getRecordInfo(json, tune) {
+        document.getElementById('record-data').value = json;
+        document.getElementById('music-tune').value = tune;
+    }
+</script>
+</body>
+</html>
